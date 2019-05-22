@@ -531,7 +531,7 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   TVector3 vtauxy(ThreeCandidate.Px(), ThreeCandidate.Py(), 0);
   fv_cosdphi = dv2D_reco.Dot(vtauxy)/(dv2D_reco.Perp()*vtauxy.Perp());
   VertexDistanceXY vdistXY;
-  Measurement1D distXY = vdistXY.distance(Vertex(final_pv), final_pv);
+  Measurement1D distXY = vdistXY.distance(Vertex(transVtx), final_pv);
   std::vector<double> iVertex_2Ddisplacement;
   iVertex_2Ddisplacement.push_back(distXY.value());
   iVertex_2Ddisplacement.push_back(distXY.significance());
@@ -545,11 +545,11 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   fv_cosdphi3D = dv3D_reco.Dot(vtauxyz)/(dv3D_reco.Mag()*vtauxyz.Mag());
   VertexDistance3D dist;
 
-  std::cout<<"  "<< dist.distance(Vertex(final_pv), final_pv).value() <<"  " << dist.distance(Vertex(final_pv), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
+  std::cout<<"  "<< dist.distance(Vertex(transVtx), final_pv).value() <<"  " << dist.distance(Vertex(transVtx), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
 
   std::vector<double> iVertex_3Ddisplacement;
-  iVertex_3Ddisplacement.push_back(dist.distance(Vertex(final_pv), final_pv).value());
-  iVertex_3Ddisplacement.push_back(dist.distance(Vertex(final_pv), final_pv).significance());
+  iVertex_3Ddisplacement.push_back(dist.distance(Vertex(transVtx), final_pv).value());
+  iVertex_3Ddisplacement.push_back(dist.distance(Vertex(transVtx), final_pv).significance());
   iVertex_3Ddisplacement.push_back(fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P());
 
 
