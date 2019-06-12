@@ -86,7 +86,11 @@
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
-
+#include "TMatrixDSym.h"
+#include "TVectorD.h"
+#include "TVector3.h"
+#include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
+#include "RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h"
 #include "DsTau23Mu/T3MNtuple/interface/PDGInfo.h"
 #include "DsTau23Mu/T3MNtuple/interface/DataMCType.h"
 #include "TH2.h"
@@ -293,6 +297,13 @@ private:
   std::vector<std::vector<double> > Muon_cov;
 
 
+  std::vector<int> signalTau_charge;
+  std::vector<int> signalTau_pdgid;
+  std::vector<double> signalTau_B;
+  std::vector<double> signalTau_M;
+  std::vector<std::vector<double> > signalTau_lvp;
+  std::vector<std::vector<double> > signalTau_cov;
+  std::vector<int> signalTau_isLVP;
 
   std::vector<int>   Muon_hitPattern_pixelLayerwithMeas;
   std::vector<int>   Muon_numberOfMatchedStations;
@@ -383,10 +394,12 @@ private:
 
   std::vector<std::vector<double > > Vertex_signal_dca_reco;
   std::vector<std::vector<double > > Vertex_signal_KF_pos;
+  std::vector<std::vector<double > > Vertex_signal_KF_cov;
   std::vector<double> Vertex_signal_KF_Chi2;
   std::vector<std::vector<std::vector<double > > > Vertex_signal_KF_refittedTracksP4;
 
   std::vector<std::vector<double > > Vertex_signal_AF_pos;
+
   std::vector<double> Vertex_signal_AF_Chi2;
   std::vector<double> Vertex_signal_AF_Ndf;
   std::vector<std::vector<std::vector<double > > > Vertex_signal_AF_refittedTracksP4;

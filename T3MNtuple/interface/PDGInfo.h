@@ -6,6 +6,7 @@
 class PDGInfo {
  public:
   static double pi_mass(){return  0.13957018;}
+  static double mu_mass(){return  0.10565;}
   static double tau_mass(){return 1.77682;}
   static double phi_mass(){return 1.019445;}
   static double K0S_mass(){return 0.497611;}

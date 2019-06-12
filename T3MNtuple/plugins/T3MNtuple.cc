@@ -277,9 +277,11 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   unsigned int index(0);
   for ( auto &iTransientTracks :  signalTracksCollection ) {
     Vertex_signal_KF_pos.push_back(std::vector<double> ());
+    Vertex_signal_KF_cov.push_back(std::vector<double> ());
     Vertex_signal_KF_refittedTracksP4.push_back(std::vector<std::vector<double> >());
 
     Vertex_signal_AF_pos.push_back(std::vector<double> ());
+
 
 
     ClosestApproachInRPhi cApp12, cApp23, cApp31;
@@ -321,20 +323,40 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
       Vertex_signal_KF_pos.at(index).push_back(transVtx.position().y());
       Vertex_signal_KF_pos.at(index).push_back(transVtx.position().z());
   
+      reco::Vertex secondaryVertex = transVtx;
+      TMatrixTSym<double> svcov(LorentzVectorParticle::NVertex);
+      math::Error<3>::type svCov;
+      secondaryVertex.fill(svCov);
+
+      for (int i = 0; i <LorentzVectorParticle::NVertex; i++){
+	for (int j = 0; j < LorentzVectorParticle::NVertex; j++) {
+	  svcov(i, j) = svCov(i, j);
+	  svcov(j, i) = svCov(i, j);
+	}
+      }
+      for (int i = 0; i < LorentzVectorParticle::NVertex; i++) {
+	for (int j = i; j < LorentzVectorParticle::NVertex; j++) {
+	  Vertex_signal_KF_cov.at(index).push_back(svcov(i, j));
+	}
+      }
+   
+
       TheSecondaryVertexPoint = math::XYZPoint(transVtx.position().x(), transVtx.position().y(), transVtx.position().z());
       vector<TransientTrack>::const_iterator trkIt = transVtx.refittedTracks().begin();
+
+      //      std::cout<<" refitted tracks size "<< transVtx.refittedTracks().size() << std::endl;
+    
       for(; trkIt != transVtx.refittedTracks().end(); ++ trkIt) {
       std::vector<double> irefitted_tracks_p4;
 	const Track & trkrefit = trkIt->track();
-	irefitted_tracks_p4.push_back(sqrt(pow(trkrefit.p(),2.0) + pow(PDGInfo::pi_mass(),2.0)));
+	irefitted_tracks_p4.push_back(sqrt(pow(trkrefit.p(),2.0) + pow(PDGInfo::mu_mass(),2.0)));
 	irefitted_tracks_p4.push_back(trkrefit.px());
 	irefitted_tracks_p4.push_back(trkrefit.py());
 	irefitted_tracks_p4.push_back(trkrefit.pz());
-	ThreeCandidate+=TLorentzVector(trkrefit.px(),trkrefit.py(),trkrefit.pz(),sqrt(pow(trkrefit.p(),2.0) + pow(PDGInfo::pi_mass(),2.0)));
+	ThreeCandidate+=TLorentzVector(trkrefit.px(),trkrefit.py(),trkrefit.pz(),sqrt(pow(trkrefit.p(),2.0) + pow(PDGInfo::mu_mass(),2.0)));
 	Vertex_signal_KF_refittedTracksP4.at(Vertex_signal_KF_refittedTracksP4.size() -1).push_back(irefitted_tracks_p4);
       }
     }
-
 
 
     bool AFitOk(true);
@@ -437,9 +459,6 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   Vertex_MatchedPrimaryVertex.push_back(iprimaryVertex_Pos);
 
 
-
-
-
   vector<TransientTrack> primaryvertexTransientTracks;// remove muon candidate from the PV to perform refit
   for(Vertex::trackRef_iterator itk = MatchedPrimaryVertex.tracks_begin(); itk != MatchedPrimaryVertex.tracks_end(); itk++) {
     if((**itk).pt()>1) {
@@ -471,25 +490,27 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   }
   Vertex_MatchedRefitPrimaryVertex.push_back(iRefitprimaryVertex_Pos);
 
-  TMatrixTSym<double> pvcov(3);
+
+  TMatrixTSym<double> pvcov(LorentzVectorParticle::NVertex);
+
   math::Error<3>::type pvCov;
   MatchedPrimaryVertex.fill(pvCov);
-
-  for(int i=0;i<LorentzVectorParticle::NVertex;i++){
-    for(int j=i;j<LorentzVectorParticle::NVertex;j++){
+  
+  for (int i = 0; i <LorentzVectorParticle::NVertex; i++){
+    for (int j = 0; j < LorentzVectorParticle::NVertex; j++) {
       pvcov(i, j) = pvCov(i, j);
       pvcov(j, i) = pvCov(i, j);
     }
   }
- 
-  std::vector<double>  pv_cov;
-  for(int i=0;i<LorentzVectorParticle::NVertex;i++){
-    for(int j=i;j<LorentzVectorParticle::NVertex;j++){
+  std::vector<double>  pv_cov;     
+  for (int i = 0; i < LorentzVectorParticle::NVertex; i++) {
+    for (int j = i; j < LorentzVectorParticle::NVertex; j++) {
       pv_cov.push_back(pvcov(i, j));
-
-      std::cout<<"  pvcov(i, j) "<< pvcov(i, j) << std::endl;
     }
   }
+
+
+
 
   Vertex_MatchedRefitPrimaryVertex_covariance.push_back(pv_cov);
 
@@ -538,14 +559,18 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   iVertex_2Ddisplacement.push_back(distXY.value()*fv_cosdphi * m3mu_reco/vtauxy.Perp());
   Vertex_2Ddisplacement.push_back(iVertex_2Ddisplacement);
 
-  std::cout<<"  "<< distXY.value() <<"  " << distXY.significance() << "   "<< distXY.value()*fv_cosdphi * m3mu_reco/vtauxy.Perp() <<std::endl;
+  //  std::cout<<"  "<< distXY.value() <<"  " << distXY.significance() << "   "<< distXY.value()*fv_cosdphi * m3mu_reco/vtauxy.Perp() <<std::endl;
 
   TVector3 vtauxyz(ThreeCandidate.Px(), ThreeCandidate.Py(), ThreeCandidate.Pz());
   TVector3 dv3D_reco(-final_pv.position().x() + TheSecondaryVertexPoint.x(), -final_pv.position().y() + TheSecondaryVertexPoint.y(), -final_pv.position().z() + TheSecondaryVertexPoint.z());
   fv_cosdphi3D = dv3D_reco.Dot(vtauxyz)/(dv3D_reco.Mag()*vtauxyz.Mag());
   VertexDistance3D dist;
 
+<<<<<<< HEAD
   std::cout<<"  "<< dist.distance(Vertex(transVtx), final_pv).value() <<"  " << dist.distance(Vertex(transVtx), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
+=======
+  //  std::cout<<"  "<< dist.distance(Vertex(final_pv), final_pv).value() <<"  " << dist.distance(Vertex(final_pv), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
+>>>>>>> 1defc53503c8f23fc31c56bf6f933f084e692d08
 
   std::vector<double> iVertex_3Ddisplacement;
   iVertex_3Ddisplacement.push_back(dist.distance(Vertex(transVtx), final_pv).value());
@@ -1400,37 +1425,78 @@ T3MNtuple::fillThreeMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
     if (transVtx.refittedTracks().size() != t_trks.size())
       FitOk = false;
 
-    if(FitOk){}
+    //    if(FitOk);//  unused 
+
+
     if(transVtx.isValid()){
       if(transVtx.totalChiSquared() < 100.){ // very loose/ ndf =3
-	ThreeMuons_idx.push_back(iThreeMuon);
-	//	std::cout<<"   Three Muon Mass  "<< (mv1+ mv2+ mv3).M() <<std::endl;
 
-	ThreeMuons_SV_Chi2.push_back(transVtx.totalChiSquared());
-	ThreeMuons_SV_NDF.push_back(transVtx.degreesOfFreedom());
-	std::vector<float> iTrigMatchdR;
-	for ( auto &iMuon :  iThreeMuon ) {
-	  float match;
-	  reco::MuonRef MuonTriggMatch(muonCollection, iMuon);
-	  TLorentzVector mut;
-
-	  //	  mut.SetPtEtaPhiM(MuonTriggMatch->pt(), MuonTriggMatch->eta(), MuonTriggMatch->phi(), 0.106);
-	  //	  mut.Print();
-
-
-
-	  TriggerMatch(triggerSummary,  MuonTriggMatch , TriggerMuonMatchingdr_, match);
-	  iTrigMatchdR.push_back(match);
-
+      int ntp = signalTau_lvp.size();
+      signalTau_lvp.push_back(std::vector<double>());
+      signalTau_cov.push_back(std::vector<double>());
+      if(FitOk){
+	signalTau_isLVP.push_back(1);
+	LorentzVectorParticle  signalTau;
+	GlobalPoint sv(transVtx.position().x(), transVtx.position().y(), transVtx.position().z());
+	KinematicParticleFactoryFromTransientTrack kinFactory;
+	float muMassSigma(sqrt(pow(10., -12.))), piChi(0.0), piNdf(0.0);
+	std::vector<RefCountedKinematicParticle> muons;
+	for (unsigned int i = 0; i <t_trks.size(); i++)
+	muons.push_back(kinFactory.particle(t_trks.at(i), PDGInfo::mu_mass(), piChi, piNdf, sv, muMassSigma));
+	KinematicParticleVertexFitter kpvFitter;
+	RefCountedKinematicTree jpTree = kpvFitter.fit(muons);
+	if(jpTree->isValid()){
+	  jpTree->movePointerToTheTop();
+	  const KinematicParameters parameters = jpTree->currentParticle()->currentState().kinematicParameters();
+	  AlgebraicSymMatrix77 cov = jpTree->currentParticle()->currentState().kinematicParametersError().matrix();
+	  
+	  double c(0);
+	  for (unsigned int i = 0; i < t_trks.size(); i++) {
+	    c += t_trks.at(i).charge();
+	  }
+	  
+	  TMatrixT<double> tau_par(LorentzVectorParticle::NLorentzandVertexPar, 1);
+	  TMatrixTSym<double> tau_cov(LorentzVectorParticle::NLorentzandVertexPar);
+	  for (int i = 0; i < LorentzVectorParticle::NLorentzandVertexPar; i++) {
+	    tau_par(i, 0) = parameters(i);
+	    for (int j = 0; j < LorentzVectorParticle::NLorentzandVertexPar; j++) {
+	      tau_cov(i, j) = cov(i, j);
+	    }
+	  }
+	  signalTau = LorentzVectorParticle(tau_par, tau_cov, abs(PDGInfo::tau_minus) * c, c, theB->field()->inInverseGeV(sv).z());
+	  signalTau_charge.push_back(signalTau.Charge());
+	  signalTau_pdgid.push_back(signalTau.PDGID());
+	  signalTau_B.push_back(signalTau.BField());
+	  signalTau_M.push_back(signalTau.Mass());
+	  
+	  for (int i = 0; i < signalTau.NParameters(); i++) {
+	    signalTau_lvp.at(ntp).push_back(signalTau.Parameter(i));
+	    for (int j = i; j < signalTau.NParameters(); j++) {
+	      signalTau_cov.at(ntp).push_back(signalTau.Covariance(i, j));
+	    }
+	  }
 	}
-	ThreeMuons_TriggerMatch_dR.push_back(iTrigMatchdR);
+      }else{ signalTau_isLVP.push_back(-1);}
+      
+      ThreeMuons_idx.push_back(iThreeMuon);
+      ThreeMuons_SV_Chi2.push_back(transVtx.totalChiSquared());
+      ThreeMuons_SV_NDF.push_back(transVtx.degreesOfFreedom());
+      std::vector<float> iTrigMatchdR;
+      for ( auto &iMuon :  iThreeMuon ) {
+	float match;
+	reco::MuonRef MuonTriggMatch(muonCollection, iMuon);
+	TLorentzVector mut;
+	
+	TriggerMatch(triggerSummary,  MuonTriggMatch, TriggerMuonMatchingdr_, match);
+	iTrigMatchdR.push_back(match);
+	
+      }
+      ThreeMuons_TriggerMatch_dR.push_back(iTrigMatchdR);
       }
     }
   }
   return ThreeMuons_idx.size();
 }
-/*
-*/
 
 template<class T>
 void T3MNtuple::TriggerMatch(edm::Handle<trigger::TriggerEvent> &triggerSummary,  T obj, double drmax, float &match) {
@@ -1474,7 +1540,7 @@ T3MNtuple::findTwoMuonsAndTrackCandidates(const edm::Event& iEvent, const edm::E
   for (reco::MuonCollection::const_iterator iMuon = muonCollection->begin(); iMuon != muonCollection->end(); ++iMuon, Muon_index++) {
     reco::MuonRef RefMuon(muonCollection, Muon_index);
     if((RefMuon->pt() < MuonPtCut_) || (std::fabs(RefMuon->eta()) > MuonEtaCut_)) continue;
-    if(RefMuon->isPFMuon() && RefMuon->isGlobalMuon())  preselected_muon_idx.push_back(Muon_index);
+    if(RefMuon->isPFMuon() && (RefMuon->isTrackerMuon() || RefMuon->isGlobalMuon()))  preselected_muon_idx.push_back(Muon_index);
   }
   
   if(preselected_muon_idx.size() > 1){
@@ -3214,6 +3280,19 @@ T3MNtuple::beginJob()
   output_tree->Branch("ThreeMuons_SV_NDF",&ThreeMuons_SV_NDF);
   output_tree->Branch("ThreeMuons_TriggerMatch_dR",&ThreeMuons_TriggerMatch_dR);
 
+
+
+  output_tree->Branch("signalTau_charge",&signalTau_charge);
+  output_tree->Branch("signalTau_isLVP",&signalTau_isLVP);
+  output_tree->Branch("signalTau_pdgid",&signalTau_pdgid);
+  output_tree->Branch("signalTau_B", &signalTau_B);
+  output_tree->Branch("signalTau_M",&signalTau_M);
+  output_tree->Branch("signalTau_lvp",&signalTau_lvp);
+  output_tree->Branch("signalTau_cov",&signalTau_cov);
+
+
+
+
   output_tree->Branch("TwoMuonsTrack_Muonsindex",&TwoMuonsTrack_Muonsindex);
   output_tree->Branch("TwoMuonsTrack_Trackindex",&TwoMuonsTrack_Trackindex);
   output_tree->Branch("TwoMuonsTrack_SV_Chi2",&TwoMuonsTrack_SV_Chi2);
@@ -3228,6 +3307,7 @@ T3MNtuple::beginJob()
   output_tree->Branch("Vertex_N_primary", &Vertex_N_primary);
   output_tree->Branch("Vertex_signal_dca_reco", &Vertex_signal_dca_reco);
   output_tree->Branch("Vertex_signal_KF_pos", &Vertex_signal_KF_pos);
+  output_tree->Branch("Vertex_signal_KF_cov", &Vertex_signal_KF_cov);
   output_tree->Branch("Vertex_signal_KF_refittedTracksP4", &Vertex_signal_KF_refittedTracksP4);
   output_tree->Branch("Vertex_signal_KF_Chi2", &Vertex_signal_KF_Chi2);
   output_tree->Branch("Vertex_signal_AF_pos", &Vertex_signal_AF_pos);
@@ -3495,6 +3575,14 @@ void T3MNtuple::ClearEvent() {
   ThreeMuons_SV_NDF.clear();
   ThreeMuons_TriggerMatch_dR.clear();
 
+  signalTau_charge.clear();
+  signalTau_isLVP.clear();
+  signalTau_pdgid.clear();
+  signalTau_B.clear();
+  signalTau_M.clear();
+  signalTau_lvp.clear();
+  signalTau_cov.clear();
+
   TwoMuonsTrack_idx.clear();
   TwoMuonsTrack_Muonsindex.clear();
   TwoMuonsTrack_Trackindex.clear();
@@ -3509,6 +3597,7 @@ void T3MNtuple::ClearEvent() {
 
   Vertex_signal_dca_reco.clear();
   Vertex_signal_KF_pos.clear();
+  Vertex_signal_KF_cov.clear();
   Vertex_signal_KF_refittedTracksP4.clear();
   Vertex_signal_KF_Chi2.clear();
   Vertex_signal_AF_pos.clear();
