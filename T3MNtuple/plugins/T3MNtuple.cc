@@ -566,11 +566,7 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   fv_cosdphi3D = dv3D_reco.Dot(vtauxyz)/(dv3D_reco.Mag()*vtauxyz.Mag());
   VertexDistance3D dist;
 
-<<<<<<< HEAD
-  std::cout<<"  "<< dist.distance(Vertex(transVtx), final_pv).value() <<"  " << dist.distance(Vertex(transVtx), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
-=======
   //  std::cout<<"  "<< dist.distance(Vertex(final_pv), final_pv).value() <<"  " << dist.distance(Vertex(final_pv), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
->>>>>>> 1defc53503c8f23fc31c56bf6f933f084e692d08
 
   std::vector<double> iVertex_3Ddisplacement;
   iVertex_3Ddisplacement.push_back(dist.distance(Vertex(transVtx), final_pv).value());
