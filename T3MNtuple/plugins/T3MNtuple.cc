@@ -724,6 +724,10 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
 
 void T3MNtuple::fillTracks(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
+  Handle<BeamSpot> beamSpotHandle;
+  iEvent.getByToken(bsToken_, beamSpotHandle);
+  
   Handle<TrackCollection> trackCollection;
   iEvent.getByToken(trackToken_, trackCollection);
   unsigned int Track_index(0);
@@ -762,6 +766,9 @@ void T3MNtuple::fillTracks(const edm::Event& iEvent, const edm::EventSetup& iSet
 	    iTrack_poca.push_back(track.vy());
 	    iTrack_poca.push_back(track.vz());
 	    Track_poca.push_back(iTrack_poca);
+
+		 Track_dxy_beamSpot.push_back(track.dxy(beamSpotHandle->position()));
+		 Track_dz_beamSpot.push_back(track.dz(beamSpotHandle->position()));
 	    
 	    Track_dxyError.push_back(track.dxyError());
 	    Track_dzError.push_back(track.dzError());
@@ -775,6 +782,9 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
 {
   Handle<TrackCollection> trackCollection;
   iEvent.getByToken(trackToken_, trackCollection);
+  
+  Handle<BeamSpot> beamSpotHandle;
+  iEvent.getByToken(bsToken_, beamSpotHandle);
 
   Handle<MuonCollection> muonCollection;
   iEvent.getByToken(muonToken_, muonCollection);
@@ -837,6 +847,8 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
       Muon_numberOfMatchedStations.push_back(RefMuon->numberOfMatchedStations());
       Muon_numberOfMatches.push_back(RefMuon->numberOfMatches(reco::Muon::SegmentArbitration));
       Muon_charge.push_back(RefMuon->charge());
+		Muon_dxy_beamSpot.push_back(RefMuon->innerTrack()->dxy(beamSpotHandle->position()));
+		Muon_dz_beamSpot.push_back(RefMuon->innerTrack()->dz(beamSpotHandle->position()));
       
       const Vertex & VertexMuonID = (*pvs)[dump_pv_index_to_fill.at(0)];
       int idbit(0);
@@ -1500,17 +1512,17 @@ void T3MNtuple::TriggerMatch(edm::Handle<trigger::TriggerEvent> &triggerSummary,
   drmax = 1.;
   std::vector<trigger::TriggerObject> trgobjs = triggerSummary->getObjects();
   edm::InputTag MuonFilterTag = edm::InputTag("hltTau3muTkVertexFilter", "", "HLT"); 
-  size_t MuonFilterIndex = (*triggerSummary).filterIndex(MuonFilterTag); 
-  if(MuonFilterIndex < (*triggerSummary).sizeFilters()) {
-    const trigger::Keys &KEYS = (*triggerSummary).filterKeys(MuonFilterIndex);
-    for (unsigned int ipart = 0; ipart < KEYS.size(); ipart++) {
-      double dr = reco::deltaR(trgobjs.at(KEYS.at(ipart)).eta(), trgobjs.at(KEYS.at(ipart)).phi(), obj->eta(), obj->phi());
-      if (dr < drmax) {
-	match = dr;
-	drmax = dr;
-      }
-    }
-  }
+  size_t MuonFilterIndex = (*triggerSummary).filterIndex(MuonFilterTag);
+	  if(MuonFilterIndex < (*triggerSummary).sizeFilters()) {
+       const trigger::Keys &KEYS = (*triggerSummary).filterKeys(MuonFilterIndex);
+       for (unsigned int ipart = 0; ipart < KEYS.size(); ipart++) {
+         double dr = reco::deltaR(trgobjs.at(KEYS.at(ipart)).eta(), trgobjs.at(KEYS.at(ipart)).phi(), obj->eta(), obj->phi());
+         if (dr < drmax) {
+   		   match = dr;
+   		   drmax = dr;
+         	}
+       	}	
+     	 }
 }
 
 
@@ -1690,7 +1702,8 @@ void T3MNtuple::fillTrigger(const edm::Event& iEvent, const edm::EventSetup& iSe
   for (size_t i_hlt = 0; i_hlt != triggerBitsH->size(); ++i_hlt)
     {
       string hltName = triggerNames.triggerName(i_hlt);
-      if(hltName.find("HLT_DoubleMu") != string::npos){
+      //if(hltName.find("HLT_DoubleMu") != string::npos){
+      if((hltName.find("HLT_DoubleMu") != string::npos) || (hltName.find("HLT_Mu8") != string::npos)){
 	Trigger_hltname.push_back(hltName);
 	Trigger_hltdecision.push_back(triggerBitsH->accept(i_hlt ));
       }
@@ -3126,6 +3139,8 @@ T3MNtuple::beginJob()
   output_tree->Branch("Track_poca", &Track_poca);
   output_tree->Branch("Track_dxyError", &Track_dxyError);
   output_tree->Branch("Track_dzError", &Track_dzError);
+  output_tree->Branch("Track_dxy_beamSpot", &Track_dxy_beamSpot);
+  output_tree->Branch("Track_dz_beamSpot", &Track_dz_beamSpot);
 
 
   //=============  Muon Block ====
@@ -3204,6 +3219,9 @@ T3MNtuple::beginJob()
   output_tree->Branch("Muon_calEnergy_emS9",&Muon_calEnergy_emS9);
   output_tree->Branch("Muon_calEnergy_em",&Muon_calEnergy_em);
 
+  output_tree->Branch("Muon_dxy_beamSpot",&Muon_dxy_beamSpot);
+  output_tree->Branch("Muon_diz_beamSpot",&Muon_dxy_beamSpot);
+
   output_tree->Branch("Muon_ptError",&Muon_ptError);
   output_tree->Branch("Muon_phiError",&Muon_phiError);
   output_tree->Branch("Muon_etaError",&Muon_etaError);
@@ -3255,7 +3273,7 @@ T3MNtuple::beginJob()
       output_tree->Branch("MC_childpdgid", &MC_childpdgid);
       output_tree->Branch("MC_childidx", &MC_childidx);
       output_tree->Branch("MC_status", &MC_status);
-    }
+   }
       output_tree->Branch("MC_isReco", &MC_isReco);
       output_tree->Branch("MCSignalParticle_p4", &MCSignalParticle_p4);
       output_tree->Branch("MCSignalParticle_pdgid", &MCSignalParticle_pdgid);
@@ -3410,6 +3428,9 @@ void T3MNtuple::ClearEvent() {
   Track_poca.clear();
   Track_dxyError.clear();
   Track_dzError.clear();
+  Track_dxy_beamSpot.clear();
+  Track_dz_beamSpot.clear();
+
 
   dump_track_index_to_fill.clear();
   dump_pv_index_to_fill.clear();

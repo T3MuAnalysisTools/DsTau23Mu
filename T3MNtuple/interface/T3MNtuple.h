@@ -208,6 +208,8 @@ private:
   std::vector<std::vector<double> > Track_poca;
   std::vector<double> Track_dxyError;
   std::vector<double> Track_dzError;
+  std::vector<double> Track_dxy_beamSpot;
+  std::vector<double> Track_dz_beamSpot;
   std::vector<unsigned int> dump_track_index_to_fill;
   std::vector<unsigned int> dump_pv_index_to_fill;
 
@@ -276,6 +278,8 @@ private:
   std::vector<bool>   Muon_combinedQuality_tightMatch;
   std::vector<double> Muon_combinedQuality_glbTrackProbability;
 
+  std::vector<double> Muon_dxy_beamSpot;
+  std::vector<double> Muon_dz_beamSpot;
 
   std::vector<double>   Muon_prod_inner_outer_charge;
   std::vector<std::vector<double> > Muon_outerTrack_p4;

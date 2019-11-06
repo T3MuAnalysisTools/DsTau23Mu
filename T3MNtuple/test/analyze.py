@@ -12,7 +12,7 @@ options.register('globalTag',
                  "Global Tag")
 
 options.register('nEvents',
-                 -1, #default value
+                 100, #default value
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
                  "Maximum number of processed events")
@@ -24,7 +24,7 @@ options.register('eosInputFolder',
                  "EOS folder with input files")
 
 options.register('ntupleName',
-                 './DsT3MNtuple.root', #default value
+                 '/tmp/bjoshi/DsT3MNtuple.root', #default value
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.string,
                  "Folder and name ame for output ntuple")
@@ -102,7 +102,7 @@ process.TFileService = cms.Service('TFileService',
 
 
 #process.source.fileNames = ['file:MinimumBias_RECO_543.root']  # data file for debugs and test runs
-process.source.fileNames = ['/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/EEC5ACC2-B802-E811-AF14-0CC47A0AD498.root']  # data file for debugs and test runs
+#process.source.fileNames = ['/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/EEC5ACC2-B802-E811-AF14-0CC47A0AD498.root']  # data file for debugs and test runs
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/825154B4-80FF-E711-ABFF-0025904CDDEC.root',
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/F4E4B2B4-80FF-E711-805C-0025904C5DE0.root',
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/EA5B3CB4-80FF-E711-8B32-0CC47AF9B32A.root',
@@ -122,7 +122,15 @@ process.source.fileNames = ['/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov201
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/7C2ED4B7-80FF-E711-952C-0025905D1D52.root',
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/20000/10C7841D-2C02-E811-9DD1-F01FAFE5FB02.root']
 
-
+process.source.fileNames = ['root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/110000/08CD692D-A747-E911-AED9-3CFDFE6366E0.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/110000/4604F75D-A647-E911-863A-1866DA85D9A3.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/3E402898-4E46-E911-8D40-1866DA85DACC.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/BC22FAED-ED46-E911-A0BB-F01FAFDC49B6.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/108D0360-3147-E911-9C47-B083FECFF52D.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/7464B23D-A547-E911-B749-C0BFC0E5685E.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/1A44C63F-A547-E911-B78D-90E2BACBAB00.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/5C95DF7B-2048-E911-B14C-008CFA0A5844.root',
+'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/0E182ABE-8148-E911-AE5F-A0369FF882E0.root']
 
 
 process.load("DsTau23Mu.T3MNtuple.DsTauNtuple_cfi")
