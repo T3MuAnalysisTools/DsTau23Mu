@@ -40,6 +40,7 @@
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
+#include "DataFormats/MuonReco/interface/MuonSimInfo.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "RecoMuon/MuonIdentification/interface/MuonCaloCompatibility.h"
 #include "DataFormats/MuonReco/interface/MuonShower.h"
@@ -300,6 +301,12 @@ private:
   std::vector<std::vector<double> > Muon_par;
   std::vector<std::vector<double> > Muon_cov;
 
+  std::vector<int> Muon_simPdgId;
+  std::vector<int> Muon_simMotherPdgId;
+  std::vector<int> Muon_simFlavour;
+  std::vector<int> Muon_simType;
+  std::vector<int> Muon_simBX;
+  std::vector<std::vector<double>> Muon_simP4; 
 
   std::vector<int> signalTau_charge;
   std::vector<int> signalTau_pdgid;
@@ -361,6 +368,8 @@ private:
   std::vector<int> MCSignalParticle_pdgid;
   std::vector<std::vector<int> > MCSignalParticle_childpdgid;
   std::vector<std::vector<std::vector<double> > > MCSignalParticle_childp4;
+  std::vector<std::vector<int> > MCSignalParticle_Sourcepdgid;
+  std::vector<std::vector<std::vector<double> > > MCSignalParticle_Sourcep4;
   std::vector<int> MCSignalParticle_charge;
   std::vector<std::vector<double> > MCSignalParticle_Poca;
   std::vector<std::vector<unsigned int> > MCSignalParticle_Tauidx;
@@ -427,18 +436,12 @@ private:
   std::vector<std::vector<float> > Vertex_Isolation3;
   std::vector<std::vector<float> > Vertex_Isolation4;
 
-
-
-
-
   std::vector<string>  Trigger_l1name;
   std::vector<int> Trigger_l1decision;
   std::vector<int> Trigger_l1prescale;
 
   std::vector<string>  Trigger_hltname;
   std::vector<int> Trigger_hltdecision;
-
-
 
   bool doMC_, doFullMC_, wideSB_, do2mu_, passhlt_, doTracks_, doMuons_, 
     do3mutuple_, doL1_, doThreeMuons_, doTwoMuonsAndTrack_, doBJets_;
@@ -452,7 +455,6 @@ private:
   static double TrackEtaCut_;
   static double phimassmin_;
   static double phimassmax_;
-
 
   TTree *output_tree;
   TTree *output_former_tree;
@@ -476,6 +478,7 @@ private:
   EDGetTokenT<BeamSpot> bsToken_;
   EDGetTokenT<vector<PileupSummaryInfo>> puToken_;
   EDGetTokenT<GenParticleCollection> genToken_;
+  EDGetTokenT<edm::ValueMap<reco::MuonSimInfo>> muonSimToken_; 
   TString sampleType_;
   L1TGlobalUtil* gtUtil_;
 };

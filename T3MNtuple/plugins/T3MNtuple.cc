@@ -39,6 +39,7 @@ T3MNtuple::T3MNtuple(const edm::ParameterSet& iConfig):
   bsToken_(consumes<BeamSpot>(iConfig.getParameter<InputTag>("beamSpotHandle"))),
   puToken_(consumes<vector<PileupSummaryInfo> >(iConfig.getParameter<InputTag>("pileupSummary"))),
   genToken_(consumes<GenParticleCollection>(iConfig.getParameter<InputTag>("genParticles"))),
+  muonSimToken_(consumes<edm::ValueMap<reco::MuonSimInfo>>(iConfig.getParameter<InputTag>("muonSimClassifier"))),
   sampleType_(iConfig.getUntrackedParameter<string>("DataMCType",""))
 {
   gtUtil_ = new L1TGlobalUtil(iConfig, consumesCollector(), *this, algInputTag_, algInputTag_);
@@ -63,6 +64,7 @@ T3MNtuple::T3MNtuple(const edm::ParameterSet& iConfig):
 
   DataMCType DMT;
   Event_DataMC_Type=DMT.GetType(sampleType_);
+
 }
 
 
@@ -82,10 +84,11 @@ T3MNtuple::~T3MNtuple()
 
 bool T3MNtuple::isGoodTrack(const Track &track) {
   if(track.pt()>TrackPtCut_){
-    if(abs(track.eta())<TrackEtaCut_){
-      if(track.hitPattern().trackerLayersWithMeasurement()>5){
-	if(track.hitPattern().pixelLayersWithMeasurement()>1) return true;
-      }
+    if(fabs(track.eta())<TrackEtaCut_){return true;
+      //      if(track.hitPattern().trackerLayersWithMeasurement()>5){
+      //	if(track.hitPattern().pixelLayersWithMeasurement()>1) return true;
+      //      }
+      //    }
     }
   }
   return false;
@@ -93,7 +96,7 @@ bool T3MNtuple::isGoodTrack(const Track &track) {
 
 
 bool T3MNtuple::AcceptedMuon(reco::MuonRef RefMuon) {
-  if((RefMuon->pt() > MuonPtCut_) || (abs(RefMuon->eta()) < MuonEtaCut_)){
+  if((RefMuon->pt() > MuonPtCut_) && (abs(RefMuon->eta()) < MuonEtaCut_)){
     if(RefMuon->isPFMuon() &&  ( RefMuon->isGlobalMuon() || RefMuon->isTrackerMuon()))  return true;
   }
   return false;
@@ -118,7 +121,7 @@ bool T3MNtuple::SkipThisParticle(const reco::GenParticle &GenPar){
 
   int id = abs(GenPar.pdgId());
   if(id == 21 || id == 1 || id == 2 || id ==3 || id == 4 || id == 5 || id == 6) return true;
-  if(id == 22 && GenPar.p4().Pt() < 0.3 ) return true;
+  if(id == 22 && GenPar.p4().Pt() < 0.1 ) return true;
   return false;
 
 
@@ -143,33 +146,6 @@ T3MNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   cnt_++;
   ClearEvent();
 
-  /*
-
-  fillMCTruth(iEvent, iSetup);
-  if(doThreeMuons_) Event_nsignal_candidates =   fillThreeMuons(iEvent, iSetup);
-  if(Event_nsignal_candidates==0)
-    {
-      if(doTwoMuonsAndTrack_) Event_ndsphipi_candidate = fillTwoMuonsAndTracks(iEvent, iSetup);
-    }
-  //  std::cout<<"   Event_nsignal_candidates   "  << Event_nsignal_candidates <<"  Event_ndsphipi_candidate  "<< Event_ndsphipi_candidate <<std::endl;
-  if(Event_nsignal_candidates!=0 or Event_ndsphipi_candidate!=0)
-    {
-      fillEventInfo(iEvent, iSetup);
-      fillVertices(iEvent, iSetup);
-      if(doTracks_)
-	fillTracks(iEvent, iSetup);
-      if(doBJets_)
-	fillBTagJets(iEvent, iSetup);
-      if(doMuons_)
-	fillMuons(iEvent, iSetup);
-      if(doMC_)
-	fillMCTruth(iEvent, iSetup);
-      if(doL1_)
-	fillTrigger(iEvent, iSetup);
-      output_tree->Fill();
-    }
-  */
-
   fillEventInfo(iEvent, iSetup);
   if(doMC_)
     fillMCTruth(iEvent, iSetup);
@@ -177,11 +153,9 @@ T3MNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   if(doThreeMuons_) 
     Event_nsignal_candidates =   fillThreeMuons(iEvent, iSetup);
 
-  if(Event_nsignal_candidates==0)
-    {
-      if(doTwoMuonsAndTrack_) Event_ndsphipi_candidate = fillTwoMuonsAndTracks(iEvent, iSetup);
-    }
-  //  std::cout<<"   Event_nsignal_candidates   "  << Event_nsignal_candidates <<"  Event_ndsphipi_candidate  "<< Event_ndsphipi_candidate <<std::endl;
+  if(doTwoMuonsAndTrack_)
+    Event_ndsphipi_candidate = fillTwoMuonsAndTracks(iEvent, iSetup);
+  //  std::cout<<"NDsPhi candidates  "<< Event_ndsphipi_candidate << "   signal candiadet  "<<  Event_nsignal_candidates <<std::endl;
   if(Event_nsignal_candidates!=0 or Event_ndsphipi_candidate!=0)
     {
       MC_isReco=1;
@@ -344,8 +318,6 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
       TheSecondaryVertexPoint = math::XYZPoint(transVtx.position().x(), transVtx.position().y(), transVtx.position().z());
       vector<TransientTrack>::const_iterator trkIt = transVtx.refittedTracks().begin();
 
-      //      std::cout<<" refitted tracks size "<< transVtx.refittedTracks().size() << std::endl;
-    
       for(; trkIt != transVtx.refittedTracks().end(); ++ trkIt) {
       std::vector<double> irefitted_tracks_p4;
 	const Track & trkrefit = trkIt->track();
@@ -446,8 +418,6 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
       primaryvertex_index=vertex_index;
     }
   }
-
-  
   
   const Vertex & MatchedPrimaryVertex = (*pvs)[primaryvertex_index];
   dump_pv_index_to_fill.push_back(primaryvertex_index);
@@ -510,8 +480,6 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   }
 
 
-
-
   Vertex_MatchedRefitPrimaryVertex_covariance.push_back(pv_cov);
 
   Vertex final_pv = MatchedPrimaryVertex;  
@@ -559,21 +527,16 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   iVertex_2Ddisplacement.push_back(distXY.value()*fv_cosdphi * m3mu_reco/vtauxy.Perp());
   Vertex_2Ddisplacement.push_back(iVertex_2Ddisplacement);
 
-  //  std::cout<<"  "<< distXY.value() <<"  " << distXY.significance() << "   "<< distXY.value()*fv_cosdphi * m3mu_reco/vtauxy.Perp() <<std::endl;
 
   TVector3 vtauxyz(ThreeCandidate.Px(), ThreeCandidate.Py(), ThreeCandidate.Pz());
   TVector3 dv3D_reco(-final_pv.position().x() + TheSecondaryVertexPoint.x(), -final_pv.position().y() + TheSecondaryVertexPoint.y(), -final_pv.position().z() + TheSecondaryVertexPoint.z());
   fv_cosdphi3D = dv3D_reco.Dot(vtauxyz)/(dv3D_reco.Mag()*vtauxyz.Mag());
   VertexDistance3D dist;
 
-  //  std::cout<<"  "<< dist.distance(Vertex(final_pv), final_pv).value() <<"  " << dist.distance(Vertex(final_pv), final_pv).significance() << "   "<< fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P() <<std::endl;
-
   std::vector<double> iVertex_3Ddisplacement;
   iVertex_3Ddisplacement.push_back(dist.distance(Vertex(transVtx), final_pv).value());
   iVertex_3Ddisplacement.push_back(dist.distance(Vertex(transVtx), final_pv).significance());
   iVertex_3Ddisplacement.push_back(fv_d3D*fv_cosdphi3D*m3mu_reco/ThreeCandidate.P());
-
-
 
   Vertex_3Ddisplacement.push_back(iVertex_3Ddisplacement);
 
@@ -625,13 +588,13 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
       sumalltracks++; // iso 3b
       if(dca_fv<mindist)mindist=dca_fv; // iso 4b
     } 
-
+    //    std::cout<<"mindist  "<< mindist <<std::endl;
     if(t.pt()<1.0) continue;  // was 1.2
     // iso no. 1
     if(dr_tau < 0.5 && dca_fv<0.05 ) {
       sumptalltracks05 += t.pt();
       sumalltracks05++; // iso 3
-      //if(dca_fv<mindca_iso05)mindca_iso05=dca_fv; // iso 4
+      if(dca_fv<mindca_iso05)mindca_iso05=dca_fv; // iso 4
     }
     if(dca_fv<mindca_iso05)mindist05=dca_fv; // iso 4
     if(dca_fv<0.05)sumalltracks_b++; // iso 3b
@@ -688,7 +651,9 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   
   isolation2.push_back(relative_iso05);
   isolation2.push_back(sumalltracks05);
+  isolation2.push_back(mindist);
   isolation2.push_back(mindist05);
+
   
   isolation3.push_back(relative_mu1_iso);
   isolation3.push_back(relative_mu2_iso);
@@ -710,15 +675,7 @@ void T3MNtuple::fillVertices(const edm::Event& iEvent, const edm::EventSetup& iS
   Vertex_Isolation4.push_back(isolation4);
   index++;
   }
-
-
-
-  //N_Sv = 0; // to be filled later
-  for(size_t isv = 0; isv < svs->size(); isv++) {
-    //    const Vertex & sv = (*svs)[isv];
-    //    if(abs(sv.p4().M()-0.498)<.03 && sv.tracksSize()==2)continue; // no Ks
-    //    std::cout<<"Secondary Vertex Mass  "<< sv.p4().M() << "    nSV   "<< isv <<std::endl;
-  }
+ 
   return;
 }
 
@@ -792,6 +749,10 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
   Handle<VertexCollection> pvs;
   iEvent.getByToken(vtxToken_ , pvs);
 
+  Handle<edm::ValueMap<reco::MuonSimInfo>> muonSimCollection;
+  iEvent.getByToken(muonSimToken_, muonSimCollection);
+  auto MuonSimCollection = muonSimCollection.product();
+
   unsigned int Muon_index = 0;
   unsigned int sel_muon_index = 0;
   ThreeMuons_index.resize(ThreeMuons_idx.size());
@@ -800,6 +761,7 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   for (reco::MuonCollection::const_iterator iMuon = muonCollection->begin(); iMuon != muonCollection->end(); ++iMuon, Muon_index++) {
     reco::MuonRef RefMuon(muonCollection, Muon_index);
+	 reco::MuonSimInfo SimMuon = MuonSimCollection->get(Muon_index);
     if(AcceptedMuon(RefMuon)){
       for(unsigned int iThreeMuons=0;  iThreeMuons < ThreeMuons_idx.size(); iThreeMuons++){
 	if(find(ThreeMuons_idx.at(iThreeMuons).begin(), ThreeMuons_idx.at(iThreeMuons).end(), Muon_index) !=  ThreeMuons_idx.at(iThreeMuons).end()){
@@ -824,15 +786,32 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
       iMuon_p4.push_back(RefMuon->p4().Py());
       iMuon_p4.push_back(RefMuon->p4().Pz());
       Muon_p4.push_back(iMuon_p4);
-      
+		
+		std::vector<double> tmpP4;
+		tmpP4.push_back(SimMuon.p4.E());
+		tmpP4.push_back(SimMuon.p4.Px());
+		tmpP4.push_back(SimMuon.p4.Py());
+		tmpP4.push_back(SimMuon.p4.Pz());
+	   /*
+		cout<<"Sim Muon Information"<<endl;
+		cout<<SimMuon.pdgId<<endl;
+		cout<<SimMuon.motherPdgId<<endl;
+		cout<<"Sim P4: "<<tmpP4.Pt()<<" "<<tmpP4.Eta()<<" "<<tmpP4.Phi()<<endl;
+		cout<<"RECO P4: "<<RefMuon->p4().Pt()<<RefMuon->p4().Eta()<<RefMuon->p4().Phi()<<endl;
+		cout<<"-----------------------"<<endl;
+		*/
+		Muon_simPdgId.push_back(SimMuon.pdgId);
+      Muon_simMotherPdgId.push_back(SimMuon.motherPdgId);
+      Muon_simFlavour.push_back(SimMuon.flavour);
+	   Muon_simType.push_back(SimMuon.primaryClass);
+	   Muon_simBX.push_back(SimMuon.tpBX);
+		Muon_simP4.push_back(tmpP4);
+
       const reco::MuonIsolation Iso03 = RefMuon->isolationR03();
       const reco::MuonIsolation Iso05 = RefMuon->isolationR05();
       
       const reco::MuonPFIsolation PFIso03 = RefMuon->pfIsolationR03();
       const reco::MuonPFIsolation PFIso04 = RefMuon->pfIsolationR04();
-      
-
-
 
       Muon_numberOfChambers.push_back(RefMuon->numberOfChambers());
       Muon_isGlobalMuon.push_back(RefMuon->isGlobalMuon());
@@ -1198,6 +1177,8 @@ T3MNtuple::fillMCTruth(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if (DMT.isSignalParticle(itr->pdgId())) {
 	  MCSignalParticle_childpdgid.push_back(std::vector<int>());
 	  MCSignalParticle_childp4.push_back(std::vector<std::vector<double> >());
+	  MCSignalParticle_Sourcepdgid.push_back(std::vector<int>());
+	  MCSignalParticle_Sourcep4.push_back(std::vector<std::vector<double> >());
 	  MCSignalParticle_pdgid.push_back(itr->pdgId());
 	  MCSignalParticle_charge.push_back(itr->charge());
 	  MCSignalParticle_Tauidx.push_back(std::vector<unsigned int>());
@@ -1208,7 +1189,19 @@ T3MNtuple::fillMCTruth(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  iSig_p4.push_back(itr->p4().Py());
 	  iSig_p4.push_back(itr->p4().Pz());
 	  MCSignalParticle_p4.push_back(iSig_p4);
-	  //	  std::cout<<"Signal particle  "<<   PDGInfo::pdgIdToName(itr->pdgId()) << std::endl;
+
+	  for (unsigned int i = 0; i < itr->numberOfMothers(); i++){
+	    const reco::Candidate *mot = itr->mother(i);
+	    std::vector<double> iSourcep4;
+	    iSourcep4.push_back(mot->p4().E());
+	    iSourcep4.push_back(mot->p4().Px());
+	    iSourcep4.push_back(mot->p4().Py());
+	    iSourcep4.push_back(mot->p4().Pz());
+
+	    MCSignalParticle_Sourcepdgid.at(MCSignalParticle_Sourcepdgid.size() - 1).push_back(mot->pdgId());
+	    MCSignalParticle_Sourcep4.at(MCSignalParticle_Sourcepdgid.size() - 1).push_back(iSourcep4);
+	  }
+
 	  // look for daughter tau
 	  for (unsigned int i = 0; i < itr->numberOfDaughters(); i++){
 	    const reco::Candidate *dau = itr->daughter(i);
@@ -1220,18 +1213,15 @@ T3MNtuple::fillMCTruth(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 	    MCSignalParticle_childpdgid.at(MCSignalParticle_childpdgid.size() - 1).push_back(dau->pdgId());
 	    MCSignalParticle_childp4.at(MCSignalParticle_childpdgid.size() - 1).push_back(ichildp4);
-	    //	    std::cout<<"Signal particles product  "<< PDGInfo::pdgIdToName(dau->pdgId())<< std::endl;
 	    if (abs(dau->pdgId()) == PDGInfo::tau_minus) {
 	      unsigned int tauidx = MCTauandProd_p4.size();
 	      MCSignalParticle_Tauidx.at(MCSignalParticle_Tauidx.size() - 1).push_back(tauidx);
 	      // Analysis the tau decay
 	      std::vector<const reco::GenParticle*> TauProducts = TauDecayProducts(static_cast<const reco::GenParticle*>(dau));
-	      //	      std::cout<<"k  :"<< k << std::endl;
 	      MCTauandProd_midx.push_back(k);
 	      MCTauandProd_pdgid.push_back(std::vector<int>());
 	      MCTauandProd_charge.push_back(std::vector<int>());
 	      MCTauandProd_p4.push_back(std::vector<std::vector<double> >());
-	      //std::cout<<"In case of tau, tauidx: "<< tauidx << std::endl;
 	      for (unsigned int i = 0; i < TauProducts.size(); i++) {
 		MCTauandProd_pdgid.at(tauidx).push_back(TauProducts.at(i)->pdgId());
 		MCTauandProd_charge.at(tauidx).push_back(TauProducts.at(i)->charge());
@@ -1279,6 +1269,7 @@ T3MNtuple::fillTwoMuonsAndTracks(const edm::Event& iEvent, const edm::EventSetup
   iEvent.getByToken(trigeventToken_, triggerSummary);
 
   std::vector<std::vector<unsigned int> > PreselectedTwoMuonsTrackCollection  = findTwoMuonsAndTrackCandidates(iEvent, iSetup);
+  //  std::cout<<" PreselectedTwoMuonsTrackCollection  "<< PreselectedTwoMuonsTrackCollection.size()<< std::endl;
   if(PreselectedTwoMuonsTrackCollection.size()==0){
     return 0;          //No two muons + track candidate found!
   }
@@ -1302,9 +1293,16 @@ T3MNtuple::fillTwoMuonsAndTracks(const edm::Event& iEvent, const edm::EventSetup
 
     mv1.SetPtEtaPhiM(Muon1->pt(), Muon1->eta(), Muon1->phi(), 0.106);
     mv2.SetPtEtaPhiM(Muon2->pt(), Muon2->eta(), Muon2->phi(), 0.106);
+
+
+    //    std::cout<<" MuMass   "<< (mv1+mv2).M()<<std::endl;
+
+
+
     TrackRef track1 = Muon1->innerTrack();
     TrackRef track2 = Muon2->innerTrack();
     TrackRef track3 = TrackRef(trackCollection, iTwoMuTr.at(2));
+    //    std::cout<<" pTs  "<< Muon1->pt()<<"   "<< Muon2->pt() << "  "<< sqrt(track3->px()*track3->px() + track3->py()*track3->py()) << std::endl;
     t_trks.push_back(theB->build(track1));
     t_trks.push_back(theB->build(track2));
     t_trks.push_back(theB->build(track3));
@@ -1320,9 +1318,12 @@ T3MNtuple::fillTwoMuonsAndTracks(const edm::Event& iEvent, const edm::EventSetup
     if (transVtx.refittedTracks().size() != t_trks.size())
       FitOk = false;
 
+
+    //    std::cout<<"Fit Ok ?? "<< FitOk << "  ch2  "<< transVtx.totalChiSquared() << std::endl;
     if(FitOk){
-      if(transVtx.totalChiSquared() < 30){
-	if((mv1 + mv2).M() < phimassmin_ || (mv1 + mv2).M() > phimassmax_){ //----  di-muon mass constraint
+      if(transVtx.totalChiSquared() < 100){
+	//	if((mv1 + mv2).M() < phimassmin_ || (mv1 + mv2).M() > phimassmax_)
+	  { //----  di-muon mass constraint
       //if(transVtx.totalChiSquared() < 15 && Muon1->charge()*Muon2->charge()!=1){
 
 	TwoMuonsTrack_idx.push_back(iTwoMuTr);
@@ -1348,6 +1349,7 @@ T3MNtuple::fillTwoMuonsAndTracks(const edm::Event& iEvent, const edm::EventSetup
       }
     }
   }
+  //  std::cout<<" How much returned ?? " << TwoMuonsTrack_idx.size()  << std::endl;
   return TwoMuonsTrack_idx.size();
 }
 
@@ -1400,18 +1402,6 @@ T3MNtuple::fillThreeMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
     reco::MuonRef Muon1(muonCollection, iThreeMuon.at(0));
     reco::MuonRef Muon2(muonCollection, iThreeMuon.at(1));
     reco::MuonRef Muon3(muonCollection, iThreeMuon.at(2));
-
-    //    TLorentzVector mv1,mv2,mv3;
-
-    //    mv1.SetPtEtaPhiM(Muon1->pt(), Muon1->eta(), Muon1->phi(), 0.106);
-    //    mv2.SetPtEtaPhiM(Muon2->pt(), Muon2->eta(), Muon2->phi(), 0.106);
-    //    mv3.SetPtEtaPhiM(Muon3->pt(), Muon3->eta(), Muon3->phi(), 0.106);
-
-
-    //    TrackRef track1 = Muon1->globalTrack();
-    //    TrackRef track2 = Muon2->globalTrack();
-    //    TrackRef track3 = Muon3->globalTrack();
-
 
     TrackRef track1 = Muon1->innerTrack();
     TrackRef track2 = Muon2->innerTrack();
@@ -1547,10 +1537,11 @@ T3MNtuple::findTwoMuonsAndTrackCandidates(const edm::Event& iEvent, const edm::E
 
   for (reco::MuonCollection::const_iterator iMuon = muonCollection->begin(); iMuon != muonCollection->end(); ++iMuon, Muon_index++) {
     reco::MuonRef RefMuon(muonCollection, Muon_index);
-    if((RefMuon->pt() < MuonPtCut_) || (std::fabs(RefMuon->eta()) > MuonEtaCut_)) continue;
-    if(RefMuon->isPFMuon() && (RefMuon->isTrackerMuon() || RefMuon->isGlobalMuon()))  preselected_muon_idx.push_back(Muon_index);
+    if(AcceptedMuon(RefMuon)) preselected_muon_idx.push_back(Muon_index);
+    //    if((RefMuon->pt() < MuonPtCut_) || (std::fabs(RefMuon->eta()) > MuonEtaCut_)) continue;
+    //    if(RefMuon->isPFMuon() && (RefMuon->isTrackerMuon() || RefMuon->isGlobalMuon()))  preselected_muon_idx.push_back(Muon_index);
   }
-  
+  //  std::cout<<"preselected muons size:  "<<preselected_muon_idx.size()<< "   start loop  "  <<std::endl;
   if(preselected_muon_idx.size() > 1){
     for(size_t i = 0; i < preselected_muon_idx.size()-1; ++ i){
       std::vector<unsigned int> dump_index;
@@ -1558,40 +1549,63 @@ T3MNtuple::findTwoMuonsAndTrackCandidates(const edm::Event& iEvent, const edm::E
       for(size_t j = i+1; j < preselected_muon_idx.size(); ++ j){
 	reco::MuonRef  Muon2(muonCollection, preselected_muon_idx.at(j));
 
-        double dz_12 = abs(Muon2->innerTrack()->dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));  //   Check that two muons are
+	double dz_12 = abs(Muon2->vz()-Muon1->vz());  // like NFN
+	//        double dz_12 = abs(Muon2->innerTrack()->dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));  //   Check that two muons are
+
+
         double dr_12 = deltaR(Muon1->eta(), Muon1->phi(), Muon2->eta(), Muon2->phi());                                                //   not far from each othe
+	if(abs(Muon1->charge() + Muon2->charge()) !=0 ) continue;
 
-	if(dz_12>0.5 ||  dr_12>0.8)continue; // - to be checked
-	unsigned int Track_index = 0;
-	for (reco::TrackCollection::const_iterator iTrack = trackCollection->begin(); iTrack != trackCollection->end(); ++iTrack, Track_index++)
-	  {
-	    const reco::Track track = (*iTrack);
-	    if(isGoodTrack(track)){
-	      if(!(abs(track.dxy(beamSpotHandle->position())) < .3)  ||  !(abs(track.dz(beamSpotHandle->position())) < 20)) continue;   // check if the tracks is far from the BS.   
-	          
-	      double dz23 = abs(track.dz(beamSpotHandle->position())-Muon2->innerTrack()->dz(beamSpotHandle->position()));  // if the POCA of the track candidate is far from the muons - continue
-	      double dz31 = abs(track.dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));
+	if(dz_12 < 0.5 &&  dr_12<0.8)
+	  { // - to be checked
+	    //	    std::cout<<"Muons charge  "<< Muon1->charge() + Muon2->charge() <<"  dz and dr   " << dz_12 << "  "<< dr_12<< std::endl;
+	    unsigned int Track_index = 0;
+	    //	    std::cout<<"loop over tracks "<< std::endl;
+	    //	    std::cout<<" Muons pT   "<< Muon1->pt() << "  "<< Muon2->pt() <<std::endl;
+	    for (reco::TrackCollection::const_iterator iTrack = trackCollection->begin(); iTrack != trackCollection->end(); ++iTrack, Track_index++)
+	      {
+		const reco::Track track = (*iTrack);
 
-	      if(dz23 > 0.5 || dz31 > 0.5)  continue;
 
-	      double dr23 = deltaR(track.eta(), track.phi(), Muon2->eta(), Muon2->phi());
-	      double dr31 = deltaR(track.eta(), track.phi(), Muon1->eta(), Muon1->phi());
+		if(isGoodTrack(track))
 
-	      if(dr23 > 1.2 || dr31 > 1.2)    continue;
-	      if(dr23 < 0.02 || dr31 < 0.02)  continue;
-	      
-	      if( abs(Muon1->charge() + Muon2->charge() + track.charge())>1.1 ) continue;  // check the charge
 
-	      dump_index.push_back(preselected_muon_idx.at(i));
-	      dump_index.push_back(preselected_muon_idx.at(j));
-	      dump_index.push_back(Track_index);
-	      TwoMuonsPlusTrackCollection.push_back(dump_index);
-	      dump_index.clear();
-	    }
+		  {
+		  //		  std::cout<<"isGoodTrack(track)----  " << isGoodTrack(track)  << std::endl;	    
+		  //if(!(abs(track.dxy(beamSpotHandle->position())) < .3)  ||  !(abs(track.dz(beamSpotHandle->position())) < 20)) continue;   // check if the tracks is far from the BS.   
+		    
+		  //		  double dz23 = abs(track.dz(beamSpotHandle->position())-Muon2->innerTrack()->dz(beamSpotHandle->position()));  // if the POCA of the track candidate is far from the muons - continue
+		  //		  double dz31 = abs(track.dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));
+
+		  double dz23 = fabs(track.vz()  - Muon2->vz());  // like INFN
+		  double dz31 = fabs(track.vz()  - Muon1->vz());  // like INFN
+		  
+		  double dr23 = deltaR(track.eta(), track.phi(), Muon2->eta(), Muon2->phi());
+		  double dr31 = deltaR(track.eta(), track.phi(), Muon1->eta(), Muon1->phi());
+		  //		  2.883
+
+		  //		  if(fabs(track.pt() - 1.61)< 0.02 and track.eta()  < 0) {
+		  //		    std::cout<<"0.01 < dr23 && dr31 < 1.2   "<< dr23 << "   "<< dr31 <<  "     dz23  && dz31 < 0.5  "<< dz23 <<"   "<< dz31 << std::endl;
+		  //		    std::cout<<"track pt  "<< track.pt()<< "     "<< track.eta()<<std::endl;}
+		  if(dr23 > 1.2  || dr31 > 1.2 )  continue;
+		  if(dr23 < 0.01 || dr31 < 0.01)  continue;
+		  if(dz23 > 0.5  || dz31 > 0.5 )  continue;
+		  //		  std::cout<<"------------------------ total charge  "<< Muon1->charge() + Muon2->charge() + track.charge() << std::endl;
+		  
+		  if( abs(Muon1->charge() + Muon2->charge() + track.charge())>1.1 ) continue;  // check the charge
+
+		  dump_index.push_back(preselected_muon_idx.at(i));
+		  dump_index.push_back(preselected_muon_idx.at(j));
+		  dump_index.push_back(Track_index);
+		  TwoMuonsPlusTrackCollection.push_back(dump_index);
+		  dump_index.clear();
+		}
+	      }
 	  }
       }
     }
   }
+  //  std::cout<<" how much to return  "<< TwoMuonsPlusTrackCollection.size() <<std::endl;
   return TwoMuonsPlusTrackCollection;
 }
 
@@ -1620,15 +1634,22 @@ T3MNtuple::findThreeMuonsCandidates(const edm::Event& iEvent, const edm::EventSe
     //    if((RefMuon->pt() < MuonPtCut_) || (abs(RefMuon->eta()) > MuonEtaCut_)) continue;
     //    if(RefMuon->isPFMuon() &&  ( RefMuon->isGlobalMuon() || RefMuon->isTrackerMuon()))  preselected_muon_idx.push_back(Muon_index);
   }
+
   if(preselected_muon_idx.size() > 2){
     for(size_t i = 0; i < preselected_muon_idx.size()-1; ++ i){
+
       std::vector<unsigned int> dump_index;
       reco::MuonRef  Muon1(muonCollection, preselected_muon_idx.at(i));
       for(size_t j = i+1; j < preselected_muon_idx.size(); ++ j){
 	reco::MuonRef  Muon2(muonCollection, preselected_muon_idx.at(j));
-	double dz_12 = abs(Muon2->innerTrack()->dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));  //   Check that two muons are 
+
+	double dz_12 = abs(Muon2->vz()-Muon1->vz());  //  INFN
+	//	double dz_12 = abs(Muon2->innerTrack()->dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));  //   Check that two muons are 
 	double dr_12 = deltaR(Muon1->eta(), Muon1->phi(), Muon2->eta(), Muon2->phi());                                                //   not far from each other
 	if(dz_12>0.5 ||  dr_12>0.8)continue; // - to be checked  -  this is previsou req.
+
+	//	std::cout<<"  "<< <<std::endl;
+
 	if(j<preselected_muon_idx.size()-1){
 	  for(size_t k = j+1; k < preselected_muon_idx.size(); ++ k){
 	    reco::MuonRef  Muon3(muonCollection, preselected_muon_idx.at(k));
@@ -1636,9 +1657,17 @@ T3MNtuple::findThreeMuonsCandidates(const edm::Event& iEvent, const edm::EventSe
 	    if(Muon1->pt()>2.5)number_of_muons_pt2p5++;
 	    if(Muon2->pt()>2.5)number_of_muons_pt2p5++;
 	    if(Muon3->pt()>2.5)number_of_muons_pt2p5++;
+
+	    if(Muon1->pt() < 1 or Muon2->pt() <1 or Muon3->pt()<1)std::cout<<"Wrong pt!!!"<< std::endl;
+
+
 	    if(number_of_muons_pt2p5<2)continue;  //  Not sure it is needed; Commented.
-	    double dz_23 = abs(Muon3->innerTrack()->dz(beamSpotHandle->position())-Muon2->innerTrack()->dz(beamSpotHandle->position()));
-	    double dz_31 = abs(Muon3->innerTrack()->dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));
+	    //	    double dz_23 = abs(Muon3->innerTrack()->dz(beamSpotHandle->position())-Muon2->innerTrack()->dz(beamSpotHandle->position()));
+	    //	    double dz_31 = abs(Muon3->innerTrack()->dz(beamSpotHandle->position())-Muon1->innerTrack()->dz(beamSpotHandle->position()));
+
+	    double dz_23 = abs(Muon3->vz() - Muon2->vz());
+	    double dz_31 = abs(Muon3->vz() - Muon1->vz());
+
 	    double dr_23 = deltaR(Muon3->eta(), Muon3->phi(), Muon2->eta(), Muon2->phi());
 	    double dr_31 = deltaR(Muon3->eta(), Muon3->phi(), Muon1->eta(), Muon1->phi());
 	    
@@ -1713,7 +1742,25 @@ void T3MNtuple::fillTrigger(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 void T3MNtuple::fillEventInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-
+  /* std::cout<<"event number:    "<< iEvent.id().event() << std::endl;
+  if(iEvent.id().event()==60832475 ||
+     iEvent.id().event()==83877883 ||
+     iEvent.id().event()==95019701 ||
+     iEvent.id().event()==77094060 ||
+     iEvent.id().event()==69657467 ||
+     iEvent.id().event()==80586988 ||
+     iEvent.id().event()==28508333 ||
+     iEvent.id().event()==51477152 ||
+     iEvent.id().event()==45689846 ||
+     iEvent.id().event()==98764233 ||
+     iEvent.id().event()==70020977 ||
+     iEvent.id().event()==26431595 ||
+     iEvent.id().event()==20732736 ||
+     iEvent.id().event()==66441974 ||
+     iEvent.id().event()==1487962 ||
+     iEvent.id().event()==36527075 ||
+     iEvent.id().event()==9873190 ||
+     iEvent.id().event()==36448311)  std::cout<<"-----------  This is  the matched event number:    "<< iEvent.id().event() << std::endl;*/
   Event_EventNumber = iEvent.id().event();
   Event_RunNumber = iEvent.id().run();
   Event_bunchCrossing = iEvent.bunchCrossing();
@@ -2227,7 +2274,7 @@ void T3MNtuple::fillDsTree(const edm::Event& iEvent, const edm::EventSetup& iSet
 
     if(mat1 && mat2 && mat3) {trigmat_new = 1; break;}
   }
-  std::cout<<"trigmat_new  "<< trigmat_new << std::endl;
+  //  std::cout<<"trigmat_new  "<< trigmat_new << std::endl;
 
 
 
@@ -3248,8 +3295,6 @@ T3MNtuple::beginJob()
   output_tree->Branch("Muon_isGoodMuon_TMLastStationOptimizedLowPtTight",&Muon_isGoodMuon_TMLastStationOptimizedLowPtTight );
   output_tree->Branch("Muon_isGoodMuon_TMLastStationOptimizedBarrelLowPtTight",&Muon_isGoodMuon_TMLastStationOptimizedBarrelLowPtTight );
 
-
-
   output_tree->Branch("Muon_vmuonhitcomb_reco",&Muon_vmuonhitcomb_reco);
   output_tree->Branch("Muon_rpchits_reco",&Muon_rpchits_reco);
 
@@ -3264,6 +3309,14 @@ T3MNtuple::beginJob()
   output_tree->Branch("Muon_par", &Muon_par);
   output_tree->Branch("Muon_cov", &Muon_cov);
 
+  // Muon SIM Information
+  output_tree->Branch("Muon_simPdgId", &Muon_simPdgId);
+  output_tree->Branch("Muon_simMotherPdgId", &Muon_simMotherPdgId);
+  output_tree->Branch("Muon_simFlavour", &Muon_simFlavour);
+  output_tree->Branch("Muon_simType", &Muon_simType);
+  output_tree->Branch("Muon_simBX", &Muon_simBX);
+  output_tree->Branch("Muon_simP4", &Muon_simP4);
+  
   if(doMC_){
     if(doFullMC_){
       output_tree->Branch("MC_p4", &MC_p4);
@@ -3279,12 +3332,15 @@ T3MNtuple::beginJob()
       output_tree->Branch("MCSignalParticle_pdgid", &MCSignalParticle_pdgid);
       output_tree->Branch("MCSignalParticle_childpdgid", &MCSignalParticle_childpdgid);
       output_tree->Branch("MCSignalParticle_childp4", &MCSignalParticle_childp4);
+      output_tree->Branch("MCSignalParticle_Sourcepdgid", &MCSignalParticle_Sourcepdgid);
+      output_tree->Branch("MCSignalParticle_Sourcep4", &MCSignalParticle_Sourcep4);
       output_tree->Branch("MCSignalParticle_charge", &MCSignalParticle_charge);
       output_tree->Branch("MCSignalParticle_Tauidx", &MCSignalParticle_Tauidx);
       output_tree->Branch("MCTauandProd_p4", &MCTauandProd_p4);
       output_tree->Branch("MCTauandProd_pdgid", &MCTauandProd_pdgid);
       output_tree->Branch("MCTauandProd_midx", &MCTauandProd_midx);
       output_tree->Branch("MCTauandProd_charge", &MCTauandProd_charge);
+
   }
 
 
@@ -3294,8 +3350,6 @@ T3MNtuple::beginJob()
   output_tree->Branch("ThreeMuons_SV_NDF",&ThreeMuons_SV_NDF);
   output_tree->Branch("ThreeMuons_TriggerMatch_dR",&ThreeMuons_TriggerMatch_dR);
 
-
-
   output_tree->Branch("signalTau_charge",&signalTau_charge);
   output_tree->Branch("signalTau_isLVP",&signalTau_isLVP);
   output_tree->Branch("signalTau_pdgid",&signalTau_pdgid);
@@ -3303,9 +3357,6 @@ T3MNtuple::beginJob()
   output_tree->Branch("signalTau_M",&signalTau_M);
   output_tree->Branch("signalTau_lvp",&signalTau_lvp);
   output_tree->Branch("signalTau_cov",&signalTau_cov);
-
-
-
 
   output_tree->Branch("TwoMuonsTrack_Muonsindex",&TwoMuonsTrack_Muonsindex);
   output_tree->Branch("TwoMuonsTrack_Trackindex",&TwoMuonsTrack_Trackindex);
@@ -3431,10 +3482,8 @@ void T3MNtuple::ClearEvent() {
   Track_dxy_beamSpot.clear();
   Track_dz_beamSpot.clear();
 
-
   dump_track_index_to_fill.clear();
   dump_pv_index_to_fill.clear();
-
 
   Event_nsignal_candidates=0;
   Event_ndsphipi_candidate=0;
@@ -3539,6 +3588,9 @@ void T3MNtuple::ClearEvent() {
   Muon_ptError.clear();
   Muon_phiError.clear();
   Muon_etaError.clear();
+  
+  Muon_dxy_beamSpot.clear();
+  Muon_dz_beamSpot.clear();
 
   Muon_innerTrack_validFraction.clear();
   Muon_innerTrack_pixelLayersWithMeasurement.clear();
@@ -3559,6 +3611,12 @@ void T3MNtuple::ClearEvent() {
   Muon_isGoodMuon_TMLastStationOptimizedLowPtTight.clear();
   Muon_isGoodMuon_TMLastStationOptimizedBarrelLowPtTight.clear();
 
+  Muon_simPdgId.clear();
+  Muon_simMotherPdgId.clear();
+  Muon_simFlavour.clear();
+  Muon_simType.clear();
+  Muon_simBX.clear();
+  Muon_simP4.clear();
 
   if (doMC_) {
     MC_isReco=0;
@@ -3583,6 +3641,8 @@ void T3MNtuple::ClearEvent() {
     MCTau_DecayBitMask.clear();
     MCSignalParticle_childpdgid.clear();
     MCSignalParticle_childp4.clear();
+    MCSignalParticle_Sourcepdgid.clear();
+    MCSignalParticle_Sourcep4.clear();
   }
 
 

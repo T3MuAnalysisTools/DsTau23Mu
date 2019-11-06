@@ -11,6 +11,8 @@ class DataMCType{
 	     B0_Tau=60,
 	     Bp_Tau=90,
 	     MinBias=120,
+	     Tau_3Mu2Nu=121,
+	     Ds_EtaMu=122,
 	     unknown=999
 	     // add here more MC types
   };
