@@ -35,5 +35,6 @@ T3MTree = cms.EDAnalyzer('T3MNtuple',
                          pileupSummary = cms.InputTag("addPileupInfo"),
                          genParticles = cms.InputTag("genParticles"),
                          AlgInputTag = cms.InputTag( "gtStage2Digis" ),
-                         BadGlbMuonFilter = cms.InputTag("badGlobalMuonTagger")
+                         BadGlbMuonFilter = cms.InputTag("badGlobalMuonTagger"),
+                         muonSimClassifier = cms.InputTag("muonSimClassifier")
                          )
