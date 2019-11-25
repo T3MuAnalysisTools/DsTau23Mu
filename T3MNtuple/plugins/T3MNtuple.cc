@@ -749,11 +749,35 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
   Handle<VertexCollection> pvs;
   iEvent.getByToken(vtxToken_ , pvs);
 
+  unsigned int Muon_index = 0;
+  
+  if (doMC_){
+
   Handle<edm::ValueMap<reco::MuonSimInfo>> muonSimCollection;
   iEvent.getByToken(muonSimToken_, muonSimCollection);
-  auto MuonSimCollection = muonSimCollection.product();
 
-  unsigned int Muon_index = 0;
+  auto MuonSimCollection = muonSimCollection.product();
+  for (reco::MuonCollection::const_iterator iMuon = muonCollection->begin(); iMuon != muonCollection->end(); ++iMuon, ++Muon_index) {
+    reco::MuonRef RefMuon(muonCollection, Muon_index);
+	 reco::MuonSimInfo SimMuon = MuonSimCollection->get(Muon_index);
+    if(AcceptedMuon(RefMuon)){
+      std::vector<double> tmpP4;
+      tmpP4.push_back(SimMuon.p4.E());
+      tmpP4.push_back(SimMuon.p4.Px());
+      tmpP4.push_back(SimMuon.p4.Py());
+      tmpP4.push_back(SimMuon.p4.Pz());
+      Muon_simPdgId.push_back(SimMuon.pdgId);
+      Muon_simMotherPdgId.push_back(SimMuon.motherPdgId);
+      Muon_simFlavour.push_back(SimMuon.flavour);
+      Muon_simType.push_back(SimMuon.primaryClass);
+      Muon_simBX.push_back(SimMuon.tpBX);
+      Muon_simP4.push_back(tmpP4);
+	}
+     }
+  }
+
+
+  Muon_index = 0;
   unsigned int sel_muon_index = 0;
   ThreeMuons_index.resize(ThreeMuons_idx.size());
   TwoMuonsTrack_Muonsindex.resize(TwoMuonsTrack_idx.size());
@@ -761,7 +785,6 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   for (reco::MuonCollection::const_iterator iMuon = muonCollection->begin(); iMuon != muonCollection->end(); ++iMuon, Muon_index++) {
     reco::MuonRef RefMuon(muonCollection, Muon_index);
-	 reco::MuonSimInfo SimMuon = MuonSimCollection->get(Muon_index);
     if(AcceptedMuon(RefMuon)){
       for(unsigned int iThreeMuons=0;  iThreeMuons < ThreeMuons_idx.size(); iThreeMuons++){
 	if(find(ThreeMuons_idx.at(iThreeMuons).begin(), ThreeMuons_idx.at(iThreeMuons).end(), Muon_index) !=  ThreeMuons_idx.at(iThreeMuons).end()){
@@ -786,27 +809,7 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
       iMuon_p4.push_back(RefMuon->p4().Py());
       iMuon_p4.push_back(RefMuon->p4().Pz());
       Muon_p4.push_back(iMuon_p4);
-		
-		std::vector<double> tmpP4;
-		tmpP4.push_back(SimMuon.p4.E());
-		tmpP4.push_back(SimMuon.p4.Px());
-		tmpP4.push_back(SimMuon.p4.Py());
-		tmpP4.push_back(SimMuon.p4.Pz());
-	   /*
-		cout<<"Sim Muon Information"<<endl;
-		cout<<SimMuon.pdgId<<endl;
-		cout<<SimMuon.motherPdgId<<endl;
-		cout<<"Sim P4: "<<tmpP4.Pt()<<" "<<tmpP4.Eta()<<" "<<tmpP4.Phi()<<endl;
-		cout<<"RECO P4: "<<RefMuon->p4().Pt()<<RefMuon->p4().Eta()<<RefMuon->p4().Phi()<<endl;
-		cout<<"-----------------------"<<endl;
-		*/
-		Muon_simPdgId.push_back(SimMuon.pdgId);
-      Muon_simMotherPdgId.push_back(SimMuon.motherPdgId);
-      Muon_simFlavour.push_back(SimMuon.flavour);
-	   Muon_simType.push_back(SimMuon.primaryClass);
-	   Muon_simBX.push_back(SimMuon.tpBX);
-		Muon_simP4.push_back(tmpP4);
-
+      
       const reco::MuonIsolation Iso03 = RefMuon->isolationR03();
       const reco::MuonIsolation Iso05 = RefMuon->isolationR05();
       
@@ -826,8 +829,10 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
       Muon_numberOfMatchedStations.push_back(RefMuon->numberOfMatchedStations());
       Muon_numberOfMatches.push_back(RefMuon->numberOfMatches(reco::Muon::SegmentArbitration));
       Muon_charge.push_back(RefMuon->charge());
-		Muon_dxy_beamSpot.push_back(RefMuon->innerTrack()->dxy(beamSpotHandle->position()));
-		Muon_dz_beamSpot.push_back(RefMuon->innerTrack()->dz(beamSpotHandle->position()));
+      Muon_dxy_beamSpot.push_back(RefMuon->innerTrack()->dxy(beamSpotHandle->position()));
+      Muon_dz_beamSpot.push_back(RefMuon->innerTrack()->dz(beamSpotHandle->position()));
+      Muon_dxyError.push_back(RefMuon->innerTrack()->dxyError());
+      Muon_dzError.push_back(RefMuon->innerTrack()->dzError());
       
       const Vertex & VertexMuonID = (*pvs)[dump_pv_index_to_fill.at(0)];
       int idbit(0);
@@ -837,7 +842,6 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
       if(muon::isTightMuon(*RefMuon,VertexMuonID)) idbit |= 1 << 3;
       if(muon::isHighPtMuon(*RefMuon,VertexMuonID)) idbit |= 1 << 4;
       Muon_ID.push_back(idbit);
-      
 
       int ssbit(0);
       if(RefMuon->passed(reco::Muon::CutBasedIdLoose))ssbit|=1<<0;
@@ -863,13 +867,10 @@ void T3MNtuple::fillMuons(const edm::Event& iEvent, const edm::EventSetup& iSetu
       if(RefMuon->passed(reco::Muon::MiniIsoTight))ssbit|=1<<20;
       if(RefMuon->passed(reco::Muon::MiniIsoVeryTight))ssbit|=1<<21;
       
-
       Muon_StandardSelection.push_back(ssbit);
       /////////////////////////////////////////////////////////////
       //here following guide given in:
       //https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
-      
-
 
       std::vector<double> iMuon_outerTrack_p4;
       std::vector<double> iMuon_innerTrack_p4;
@@ -2112,10 +2113,14 @@ void T3MNtuple::fillDsTree(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   ///////////////////
   // Trigger Objects
-  edm::InputTag MuonFilterTag = edm::InputTag("hltTau3muTkVertexFilter", "", "HLT"); 
-  size_t MuonFilterIndex = (*triggerSummary).filterIndex(MuonFilterTag); 
+  ///////////////////
+  // Store all the trigger objects
+
   trigger::TriggerObjectCollection allTriggerObjects = triggerSummary->getObjects();
   trigger::TriggerObjectCollection MuonLegObjects;
+
+  edm::InputTag MuonFilterTag = edm::InputTag("hltTau3muTkVertexFilter", "", "HLT"); 
+  size_t MuonFilterIndex = (*triggerSummary).filterIndex(MuonFilterTag); 
   if(MuonFilterIndex < (*triggerSummary).sizeFilters()) {
     const trigger::Keys &keysMuons = (*triggerSummary).filterKeys(MuonFilterIndex);
     for(size_t j = 0; j < keysMuons.size(); j++ ){
@@ -2123,7 +2128,6 @@ void T3MNtuple::fillDsTree(const edm::Event& iEvent, const edm::EventSetup& iSet
       MuonLegObjects.push_back(foundObject);
     }
   }
-
   //cout<<MuonLegObjects.size()<<"\t"<<n_reco<<endl;
 
   if(n_reco >= 3 && doMC_){
@@ -3267,8 +3271,9 @@ T3MNtuple::beginJob()
   output_tree->Branch("Muon_calEnergy_em",&Muon_calEnergy_em);
 
   output_tree->Branch("Muon_dxy_beamSpot",&Muon_dxy_beamSpot);
-  output_tree->Branch("Muon_diz_beamSpot",&Muon_dxy_beamSpot);
-
+  output_tree->Branch("Muon_dz_beamSpot",&Muon_dz_beamSpot);
+  output_tree->Branch("Muon_dxyError", &Muon_dxyError);
+  output_tree->Branch("Muon_dzError", &Muon_dzError);
   output_tree->Branch("Muon_ptError",&Muon_ptError);
   output_tree->Branch("Muon_phiError",&Muon_phiError);
   output_tree->Branch("Muon_etaError",&Muon_etaError);
@@ -3310,14 +3315,15 @@ T3MNtuple::beginJob()
   output_tree->Branch("Muon_cov", &Muon_cov);
 
   // Muon SIM Information
-  output_tree->Branch("Muon_simPdgId", &Muon_simPdgId);
-  output_tree->Branch("Muon_simMotherPdgId", &Muon_simMotherPdgId);
-  output_tree->Branch("Muon_simFlavour", &Muon_simFlavour);
-  output_tree->Branch("Muon_simType", &Muon_simType);
-  output_tree->Branch("Muon_simBX", &Muon_simBX);
-  output_tree->Branch("Muon_simP4", &Muon_simP4);
-  
   if(doMC_){
+    output_tree->Branch("Muon_simPdgId", &Muon_simPdgId);
+    output_tree->Branch("Muon_simMotherPdgId", &Muon_simMotherPdgId);
+    output_tree->Branch("Muon_simFlavour", &Muon_simFlavour);
+    output_tree->Branch("Muon_simType", &Muon_simType);
+    output_tree->Branch("Muon_simBX", &Muon_simBX);
+    output_tree->Branch("Muon_simP4", &Muon_simP4);
+    
+
     if(doFullMC_){
       output_tree->Branch("MC_p4", &MC_p4);
       output_tree->Branch("MC_pdgid", &MC_pdgid);
@@ -3326,7 +3332,7 @@ T3MNtuple::beginJob()
       output_tree->Branch("MC_childpdgid", &MC_childpdgid);
       output_tree->Branch("MC_childidx", &MC_childidx);
       output_tree->Branch("MC_status", &MC_status);
-   }
+    }
       output_tree->Branch("MC_isReco", &MC_isReco);
       output_tree->Branch("MCSignalParticle_p4", &MCSignalParticle_p4);
       output_tree->Branch("MCSignalParticle_pdgid", &MCSignalParticle_pdgid);
@@ -3591,6 +3597,8 @@ void T3MNtuple::ClearEvent() {
   
   Muon_dxy_beamSpot.clear();
   Muon_dz_beamSpot.clear();
+  Muon_dxyError.clear();
+  Muon_dzError.clear();
 
   Muon_innerTrack_validFraction.clear();
   Muon_innerTrack_pixelLayersWithMeasurement.clear();
@@ -3611,12 +3619,7 @@ void T3MNtuple::ClearEvent() {
   Muon_isGoodMuon_TMLastStationOptimizedLowPtTight.clear();
   Muon_isGoodMuon_TMLastStationOptimizedBarrelLowPtTight.clear();
 
-  Muon_simPdgId.clear();
-  Muon_simMotherPdgId.clear();
-  Muon_simFlavour.clear();
-  Muon_simType.clear();
-  Muon_simBX.clear();
-  Muon_simP4.clear();
+
 
   if (doMC_) {
     MC_isReco=0;
@@ -3643,6 +3646,12 @@ void T3MNtuple::ClearEvent() {
     MCSignalParticle_childp4.clear();
     MCSignalParticle_Sourcepdgid.clear();
     MCSignalParticle_Sourcep4.clear();
+	 Muon_simPdgId.clear();
+  Muon_simMotherPdgId.clear();
+  Muon_simFlavour.clear();
+  Muon_simType.clear();
+  Muon_simBX.clear();
+  Muon_simP4.clear();
   }
 
 
@@ -3694,10 +3703,6 @@ void T3MNtuple::ClearEvent() {
   Vertex_Isolation2.clear();
   Vertex_Isolation3.clear();
   Vertex_Isolation4.clear();
-
-
-
-
 
   Trigger_l1name.clear();
   Trigger_l1decision.clear();

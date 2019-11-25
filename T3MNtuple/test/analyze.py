@@ -12,7 +12,7 @@ options.register('globalTag',
                  "Global Tag")
 
 options.register('nEvents',
-                 1000, #default value
+                 100, #default value
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
                  "Maximum number of processed events")
@@ -88,7 +88,7 @@ process.source = cms.Source("PoolSource",
 
 
 process.TFileService = cms.Service('TFileService',
-                                   fileName = cms.string("DsT3MNtuple.root")
+                                   fileName = cms.string("DsT3MNtuple_run2017F.root")
                                    )
 
 
@@ -146,8 +146,6 @@ process.TFileService = cms.Service('TFileService',
 #process.source.fileNames = ['file:/afs/cern.ch/work/c/cherepan/InputTest/custom_DsTau3Mu_13TeV_RECO_crab350_9078.root']
 
 
-process.source.fileNames =  ['root://xrootd-cms.infn.it//store/user/fsimone/DsPhiPi/crab_crab_DsPhiPi_13TeV_RECO/190225_141742/0000/DsPhiPi_13TeV_RECO_763.root',
-                             'root://xrootd-cms.infn.it//store/user/fsimone/DsPhiPi/crab_crab_DsPhiPi_13TeV_RECO/190225_141742/0000/DsPhiPi_13TeV_RECO_405.root']
 
 
 
@@ -194,19 +192,19 @@ process.source.fileNames =  ['root://xrootd-cms.infn.it//store/user/fsimone/DsPh
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/10000/7C2ED4B7-80FF-E711-952C-0025905D1D52.root',
 #                            '/store/data/Run2017F/DoubleMuonLowMass/AOD/17Nov2017-v1/20000/10C7841D-2C02-E811-9DD1-F01FAFE5FB02.root']
 
-process.source.fileNames = ['root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/110000/08CD692D-A747-E911-AED9-3CFDFE6366E0.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/110000/4604F75D-A647-E911-863A-1866DA85D9A3.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/3E402898-4E46-E911-8D40-1866DA85DACC.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/BC22FAED-ED46-E911-A0BB-F01FAFDC49B6.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/108D0360-3147-E911-9C47-B083FECFF52D.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/7464B23D-A547-E911-B749-C0BFC0E5685E.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/1A44C63F-A547-E911-B78D-90E2BACBAB00.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/5C95DF7B-2048-E911-B14C-008CFA0A5844.root',
-'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/0E182ABE-8148-E911-AE5F-A0369FF882E0.root']
-
+process.source.fileNames = ['root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/110000/08CD692D-A747-E911-AED9-3CFDFE6366E0.root']
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/110000/4604F75D-A647-E911-863A-1866DA85D9A3.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/3E402898-4E46-E911-8D40-1866DA85DACC.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/BC22FAED-ED46-E911-A0BB-F01FAFDC49B6.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/108D0360-3147-E911-9C47-B083FECFF52D.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/7464B23D-A547-E911-B749-C0BFC0E5685E.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/1A44C63F-A547-E911-B78D-90E2BACBAB00.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/5C95DF7B-2048-E911-B14C-008CFA0A5844.root',
+#'root://cmsio5.rc.ufl.edu//store/mc/RunIIFall17DRPremix/DsToTau_To3Mu_MuFilter_TuneCUEP8M1_13TeV-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1/70000/0E182ABE-8148-E911-AE5F-A0369FF882E0.root']
 
 process.load("DsTau23Mu.T3MNtuple.DsTauNtuple_cfi")
 process.tagger = cms.Path(process.badGlobalMuonTagger)
 process.DsTauNtuple = cms.Sequence(process.T3MTree)
+process.T3MTree.doMC = cms.bool(False)
 process.p = cms.Path(process.DsTauNtuple)
 process.schedule = cms.Schedule(process.tagger, process.p)

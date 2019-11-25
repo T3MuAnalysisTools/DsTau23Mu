@@ -281,6 +281,8 @@ private:
 
   std::vector<double> Muon_dxy_beamSpot;
   std::vector<double> Muon_dz_beamSpot;
+  std::vector<double> Muon_dxyError;
+  std::vector<double> Muon_dzError;
 
   std::vector<double>   Muon_prod_inner_outer_charge;
   std::vector<std::vector<double> > Muon_outerTrack_p4;
