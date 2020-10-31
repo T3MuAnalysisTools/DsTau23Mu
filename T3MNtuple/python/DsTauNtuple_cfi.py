@@ -20,6 +20,7 @@ T3MTree = cms.EDAnalyzer('T3MNtuple',
                          doPhotons = cms.bool(True),
                          doThreeMuons = cms.bool(True),
                          doTwoMuonsAndTrack = cms.bool(True),
+                         miniAODRun = cms.bool(False),
                          TriggerMuonMatchingdr = cms.untracked.double(0.3),
                          WhatData = cms.untracked.string("2017"),
                          DataMCType    = cms.untracked.string("data"), #Defaut: data. Have a look at src/DataMCType.cc for available types   Set in other instance, here only for local tests
@@ -39,5 +40,5 @@ T3MTree = cms.EDAnalyzer('T3MNtuple',
                          pileupSummary = cms.InputTag("addPileupInfo"),
                          genParticles = cms.InputTag("genParticles"),
                          AlgInputTag = cms.InputTag( "gtStage2Digis" ),
-                         BadGlbMuonFilter = cms.InputTag("badGlobalMuonTagger")
+                         BadGlbMuonFilter = cms.InputTag("badGlobalMuonTagger"),
                          )

@@ -37,18 +37,25 @@
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
+
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/MuonReco/interface/MuonTime.h"
+#include "DataFormats/MuonReco/interface/CaloMuon.h"
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackBase.h"
+#include "DataFormats/TrackReco/interface/TrackExtra.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 #include "RecoMuon/MuonIdentification/interface/MuonCaloCompatibility.h"
 #include "DataFormats/MuonReco/interface/MuonShower.h"
 #include "FWCore/Framework/interface/ESHandle.h"
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackBase.h"
-#include "DataFormats/TrackReco/interface/TrackExtra.h"
+#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
+#include "DataFormats/HLTReco/interface/TriggerEvent.h"
+#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/MuonDetId/interface/MuonSubdetId.h"
 #include "RecoVertex/VertexPrimitives/interface/TransientVertex.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrack.h"
@@ -67,10 +74,7 @@
 #include "DataFormats/TrackReco/interface/HitPattern.h"
 #include "CondFormats/L1TObjects/interface/L1GtTriggerMenu.h"
 #include "CondFormats/DataRecord/interface/L1GtTriggerMenuRcd.h"
-#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
-#include "DataFormats/HLTReco/interface/TriggerEvent.h"
-#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
-#include "DataFormats/MuonReco/interface/CaloMuon.h"
+
 #include "TrackingTools/TrackAssociator/interface/TrackDetectorAssociator.h"
 #include "TrackingTools/TrackAssociator/interface/TrackDetMatchInfo.h"
 #include "TrackingTools/IPTools/interface/IPTools.h"
@@ -104,6 +108,7 @@ using namespace edm;
 using namespace std;
 using namespace l1t;
 using namespace muon;
+using namespace pat;
 //
 // class declaration
 //
@@ -141,6 +146,8 @@ private:
   std::vector<std::vector<unsigned int> > findTwoMuonsAndTrackCandidates(const edm::Event& iEvent, const edm::EventSetup& iSetup);
   template<class T>
   void TriggerMatch(edm::Handle<trigger::TriggerEvent> &triggerSummary,  T obj, double drmax, float &match);
+  template<class T>
+  void TriggerMatch(edm::Handle<vector<TriggerObjectStandAlone>> &triggerObjects,  const TriggerNames& triggerNames, T obj, double drmax, float &match);
  
   bool isGoodTrack(const Track &track);
   bool AcceptedMuon(reco::MuonRef RefMuon);
@@ -518,9 +525,8 @@ private:
   std::vector<std::vector<std::vector<float> > >  SV_Track_P4;
 
 
-
   bool doMC_, doFullMC_, wideSB_, do2mu_, passhlt_, doTracks_, doMuons_, 
-    do3mutuple_, doL1_, doThreeMuons_, doTwoMuonsAndTrack_, doBJets_, doPhotons_;
+    do3mutuple_, doL1_, doThreeMuons_, doTwoMuonsAndTrack_, doBJets_, doPhotons_, miniAODRun_;
   double TriggerMuonMatchingdr_;
   string WhatData_;
 
@@ -555,6 +561,7 @@ private:
   EDGetTokenT<TrackCollection> trackToken_;
   EDGetTokenT<TriggerResults> triggerToken_;
   EDGetTokenT<trigger::TriggerEvent> trigeventToken_;
+  EDGetTokenT<vector<TriggerObjectStandAlone>> triggerObjectToken_;
   EDGetToken algToken_;
   EDGetTokenT<BeamSpot> bsToken_;
   EDGetTokenT<vector<PileupSummaryInfo>> puToken_;

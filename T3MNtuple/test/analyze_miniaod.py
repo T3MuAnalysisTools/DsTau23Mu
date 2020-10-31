@@ -59,8 +59,6 @@ else :
 
 process = cms.Process("DsTauNtuple")
 
-
-
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(500)
 
@@ -73,10 +71,10 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condD
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
 process.GlobalTag.globaltag = cms.string(options.globalTag)
 
-process.load('RecoMET.METFilters.badGlobalMuonTaggersAOD_cff')
+#process.load('RecoMET.METFilters.badGlobalMuonTaggersAOD_cff')
 #switch on tagging mode:
-process.badGlobalMuonTagger.taggingMode = cms.bool(True)
-process.cloneGlobalMuonTagger.taggingMode = cms.bool(True)
+#process.badGlobalMuonTagger.taggingMode = cms.bool(True)
+#process.cloneGlobalMuonTagger.taggingMode = cms.bool(True)
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
@@ -95,16 +93,37 @@ process.TFileService = cms.Service('TFileService',
 #process.source.fileNames = ['/store/data/Run2018B/DoubleMuonLowMass/AOD/17Sep2018-v1/60000/02CEEEBB-DCCB-9B46-84B2-7C99FB39C98A.root']
 #process.source.fileNames = ['root://cms-xrd-global.cern.ch//store/data/Run2017D/DoubleMuonLowMass/AOD/17Nov2017-v1/70000/5A3F7AD8-36E9-E711-B981-1866DA85D72E.root']
 #process.source.fileNames = ['/store/user/wangjian/DsToTau_TauTo3Mu_March2020/RunIIAutumn18DRPremix-102X/200323_083820/0000/BPH-RunIIAutumn18DRPremix-00158_323.root']
-process.source.fileNames = ['file:/tmp/bjoshi/02CEEEBB-DCCB-9B46-84B2-7C99FB39C98A.root']
+process.source.fileNames = ['file:/tmp/bjoshi/D7A24A95-28B8-824A-A9B2-1E643CA29B5F.root']
 
 process.load("DsTau23Mu.T3MNtuple.DsTauNtuple_cfi")
 process.load("DsTau23Mu.T3MNtuple.PhotonAndV0Skim_cfi")
+process.load("DsTau23Mu.T3MNtuple.TrackCollectionProducer_cfi")
 
-process.tagger = cms.Path(process.badGlobalMuonTagger)
+#process.tagger = cms.Path(process.badGlobalMuonTagger)
 process.DsTauNtuple = cms.Sequence(process.T3MTree)
 #process.DsTauNtuple = cms.Sequence(process.T3MTree)
-process.p = cms.Path(process.PhotonAndV0SkimSequence * process.DsTauNtuple)
-process.schedule = cms.Schedule(process.tagger, process.p)
+process.p = cms.Path(process.TrackCollection * process.DsTauNtuple)
+process.schedule = cms.Schedule(process.p)
+
+process.T3MTree.muons = cms.InputTag("slimmedMuons")
+process.T3MTree.pvs = cms.InputTag("offlineSlimmedPrimaryVertices")
+process.T3MTree.svs = cms.InputTag("slimmedSecondaryVertices")
+process.T3MTree.trks = cms.InputTag("TrackCollection:pfTracks:DsTauNtuple")
+process.T3MTree.phos = cms.InputTag("slimmedPhotons")
+process.T3MTree.btagsCvsB = cms.InputTag("none")
+process.T3MTree.btagsMVA = cms.InputTag("none")
+process.T3MTree.btagsCSV = cms.InputTag("none")
+process.T3MTree.btagDeepCSV = cms.InputTag("none")  # absent in AOD
+process.T3MTree.pfcands = cms.InputTag("packedPFCandidates")
+process.T3MTree.triggerBitsH = cms.InputTag("TriggerResults", "", "HLT")
+process.T3MTree.triggerSummary = cms.InputTag("none")
+process.T3MTree.triggerObjects = cms.InputTag("slimmedPatTrigger")
+process.T3MTree.beamSpotHandle = cms.InputTag("offlineBeamSpot")
+process.T3MTree.pileupSummary = cms.InputTag("addPileupInfo")
+process.T3MTree.genParticles = cms.InputTag("genParticles")
+process.T3MTree.AlgInputTag = cms.InputTag( "gtStage2Digis" )
+process.T3MTree.miniAODRun = cms.bool(True)
+#process.T3MTree.BadGlbMuonFilter = cms.InputTag("none")
 #process.output = cms.OutputModule("PoolOutputModule",
 #                                   outputCommands = process.PhotonAndV0Skim_EventContent,
 #                                   fileName = cms.string("DsT3MNtuple.root")
