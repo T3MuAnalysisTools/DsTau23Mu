@@ -1,3 +1,7 @@
+//author: Vladimir Cherepanov
+
+
+
 #ifndef LorentzVectorParticle_h
 #define LorentzVectorParticle_h
 

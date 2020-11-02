@@ -1,3 +1,6 @@
+// Author: Vladimir Cherepanov
+
+
 #ifndef TrackHelixVertexFitter_h
 #define TrackHelixVertexFitter_h
 
